@@ -3,14 +3,20 @@ using System.Collections.Generic;
 
 namespace DiceAPI
 {
+    /// <summary>
+    /// Create and throw multiple dice using die class
+    /// </summary>
     class Dice
     {
         public List<Die> DiceCup = new();   // A nice list object to hold our dies
 
         private int _Quantity;      // 1 to 1000 dies
-        private int _Sides;         // 0 to 1000 sides (0 side is for a 1 or 0 coin toss)
+        private int _Sides;         // 1 to 1000 sides (1 side is for a 1 or 0 coin toss)
         private int _Adjustment;    // Value to add to the sum of our results
 
+        /// <summary>
+        /// Default constructor throws a singler 6 sides die
+        /// </summary>
         public Dice()
         {
             // Default to 1D6+0
@@ -22,6 +28,14 @@ namespace DiceAPI
             DiceCup.Add(ADie);
         }
 
+        /// <summary>
+        /// Constructor overload
+        /// Rolls 1 to 1000 dies (dice) with 0 to 1000 sides with an sdjustment to the 
+        /// total result.
+        /// </summary>
+        /// <param name="DiceQuantity">int: 1 to 1000 dice</param>
+        /// <param name="DiceSides">int: 1 to 1000 sides</param>
+        /// <param name="DiceAdjustment">int: Adjustment to total result</param>
         public Dice(int DiceQuantity, int DiceSides, int DiceAdjustment)
         {
             // Up to 1000 dies at a time
@@ -34,13 +48,13 @@ namespace DiceAPI
                 throw new Exception("Dice error: " + DiceQuantity.ToString() + " dies is out of range (1:1000).");
             }
             // Up to 1000 sides on a die
-            if (DiceSides >= 0 && DiceSides <= 1000)
+            if (DiceSides >= 1 && DiceSides <= 1000)
             {
                 Sides = DiceSides;
             }
             else
             {
-                throw new Exception("Dice error: " + DiceSides.ToString() + " die sides is out of range (0:1000).");
+                throw new Exception("Dice error: " + DiceSides.ToString() + " die sides is out of range (1:1000).");
             }
             Adjustment = DiceAdjustment;
             //List<Die> DiceCup = new() { };
@@ -66,6 +80,10 @@ namespace DiceAPI
             }
         }
 
+        /// <summary>
+        /// Get and return the total throw results and adjust
+        /// </summary>
+        /// <returns>int: Adjusted sum of all throws</returns>
         public int Results()
         {
             int Sum = 0;
@@ -76,18 +94,27 @@ namespace DiceAPI
             return Sum + Adjustment;
         }
 
+        /// <summary>
+        /// Dice Quantity (1:1000)
+        /// </summary>
         public int Quantity
         {
             get => _Quantity;
             set => _Quantity = value;
         }
 
+        /// <summary>
+        /// Dice Sides (1:1000)
+        /// </summary>
         public int Sides
         {
             get => _Sides;
             set => _Sides = value;
         }
 
+        /// <summary>
+        /// Dice Adjustment (MinInt:MaxInt)
+        /// </summary>
         public int Adjustment
         {
             get => _Adjustment;
