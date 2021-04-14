@@ -10,31 +10,20 @@ namespace DiceAPI.Controllers
 
     public class DiesController : ControllerBase
     {
-        /// <summary>
-        /// Create an roll dice and return the result.
-        /// </summary>
-        /// <param name="qty">int: Number of dice to "throw"</param>
-        /// <param name="sides">int: Number of sides on a die</param>
-        /// <param name="adj">int: Adjustment to apply to the total result</param>
-        /// <returns>ActionResult: List of Dies (one record in this case)</returns>
-        [HttpGet("qty/{qty}/sides/{sides}/adj/{adj}")]
-        public ActionResult<Dies> GetDies(int qty, int sides, int adj)
+        [HttpGet("details_qty/{qty}/sides/{sides}/adj/{adj}")]
+        public ActionResult<List<Dies>> GetDetails(int qty, int sides, int adj)
         {
-            List<Dies> Dice = new();    // List to hold return
-            Dies dies = new();          // Dice roller instance
+            List<Dies> Dice = new();    // List of Dies to hold return
 
             try
             {
-                Dice Rolls = new(qty, sides, adj);      // Dice roller class
-                int AResult = Rolls.Results();          // Return rolled results
+                // Create and roll all the dice
+                Dice Rolls = new(qty, sides, adj);
 
-                // Fake what would be database stuff
-                dies.Qty = qty;
-                dies.Sides = sides;
-                dies.Result = AResult;
-
-                // Dump into a list so it can be serialized json
-                Dice.Add(dies);
+                for (int Idx = 0; Idx < Rolls.DiceCup.Count; Idx++)
+                {
+                    Dice.Add(Rolls.Details[Idx]);
+                }
             }
             catch (Exception e)
             {
@@ -44,12 +33,53 @@ namespace DiceAPI.Controllers
             {
                 return NotFound();
             }
-            return Ok(Dice[Dice.Count - 1]);
+            return Dice; // Ok(Dice);
+        }
+
+        /// <summary>
+        /// Create, roll dice and return the result.
+        /// </summary>
+        /// <param name="qty">int: Number of dice to "throw" (1:1000)</param>
+        /// <param name="sides">int: Number of sides on a die (1:1000)</param>
+        /// <param name="adj">int: Adjustment to apply to the total result (MinInt:MaxInt)</param>
+        /// <returns>ActionResult: List of Dies (one record in this case) will be serialized as JSON</returns>
+        [HttpGet("qty/{qty}/sides/{sides}/adj/{adj}")]
+        public ActionResult<Dies> GetDies(int qty, int sides, int adj)
+        {
+            Dies dies = new();          // Dice roller instance
+
+            try
+            {
+                Dice Rolls = new(qty, sides, adj);      // Dice roller class
+                int AResult = Rolls.Results();          // Return rolled results
+
+                // Map results
+                dies.Id = 0;
+                dies.Qty = qty;
+                dies.Sides = sides;
+                dies.Result = AResult;
+                dies.Total = AResult;
+            }
+            catch (Exception e)
+            {
+                return BadRequest("Dice rolling error: " + e.Message);
+            }
+            if (dies.Result == 0)
+            {
+                return NotFound();
+            }
+            return dies;  
         }
 
         /// <summary>
         /// Take a dice notation string to determine what dice we need to
         /// throw
+        /// Issue: Http get won't pass a "+" to us without encoding it as "%2B". A side effect
+        ///        of the encoding is to throw an exception... 
+        ///        (IIS 10.0 Detailed Error - 404.11 - Not Found) and never finds this route. 
+        ///        A possible fix is "modify the 
+        ///        configuration/system.webServer/security/requestFiltering@allowDoubleEscaping 
+        ///        setting.". This can make us vulnerable to malformed URLs though.
         /// </summary>
         /// <param name="cmd">string: Dice notation string (quantityDsides[[+|-}adjustment], 
         /// ie 1D6+1)</param>
@@ -60,7 +90,6 @@ namespace DiceAPI.Controllers
             int Quantity = 0;           // Default 1D6
             int Sides = 6;
             int Adjustment = 0;
-            List<Dies> Dice = new();    // List to hold return
             Dies dies = new();          // Dice roller instance
 
             if (cmd.Contains("%2B"))
@@ -75,23 +104,22 @@ namespace DiceAPI.Controllers
                 Dice Rolls = new(Quantity, Sides, Adjustment);
                 int AResult = Rolls.Results();          // Return rolled results
 
-                // Fake what would be database stuff
+                // Map the results
+                dies.Id = 0;
                 dies.Qty = Quantity;
                 dies.Sides = Sides;
                 dies.Result = AResult;
-
-                // Dump into a list so it can be serialized by json
-                Dice.Add(dies);
+                dies.Total = AResult;
             }
             catch (Exception e)
             {
                 return BadRequest("Dice rolling error: " + e.Message);
             }
-            if (Dice.Count == 0)
+            if (dies.Result == 0)
             {
                 return NotFound();
             }
-            return Ok(Dice[Dice.Count - 1]);
+            return dies; 
         }
 
         /// <summary>
@@ -104,11 +132,11 @@ namespace DiceAPI.Controllers
         /// a special case "coin flip" mode that returns 0 or 1)</param>
         /// <param name="Adjustment">int: Adjustment that is applied to the total result
         /// of the dice throws</param>
-        private void Parse(string arg, ref int Quantity, ref int Sides, ref int Adjustment)
+        private static void Parse(string arg, ref int Quantity, ref int Sides, ref int Adjustment)
         {
             string arrg = arg.Trim().ToUpper();
             string[] parm1 = { "D" }; //Dies/sides delimiter
-            string[] parm2 = { "+", "-" }; //Adjustment delimiter
+            string[] parm2 = { "+", "-" }; //Adjustment delimiters
 
             // Parse individual dice roll command or default to 1d6+0
 
@@ -134,7 +162,7 @@ namespace DiceAPI.Controllers
                 }
                 //More to do here... default to one die and continue
                 Quantity = 1;
-                arrg = arrg.Substring(1, arrg.Length - 1);
+                arrg = arrg[1..];
             }
             else
             {
