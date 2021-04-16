@@ -7,9 +7,15 @@ namespace DiceAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-
     public class DiesController : ControllerBase
     {
+        /// <summary>
+        /// Create, roll dice and return a list of every die thrown.
+        /// </summary>
+        /// <param name="qty">int: Number of dice to "throw" (1:1000)</param>
+        /// <param name="sides">int: Number of sides on a die (1:1000)</param>
+        /// <param name="adj">int: Adjustment to apply to the total result (MinInt:MaxInt)</param>
+        /// <returns>List of Dies that will be serialized by JSON</returns>
         [HttpGet("details_qty/{qty}/sides/{sides}/adj/{adj}")]
         public ActionResult<List<Dies>> GetDetails(int qty, int sides, int adj)
         {
@@ -43,7 +49,7 @@ namespace DiceAPI.Controllers
         /// <param name="sides">int: Number of sides on a die (1:1000)</param>
         /// <param name="adj">int: Adjustment to apply to the total result (MinInt:MaxInt)</param>
         /// <returns>ActionResult: List of Dies (one record in this case) will be serialized as JSON</returns>
-        [HttpGet("qty/{qty}/sides/{sides}/adj/{adj}")]
+        [HttpGet("total_qty/{qty}/sides/{sides}/adj/{adj}")]
         public ActionResult<Dies> GetDies(int qty, int sides, int adj)
         {
             Dies dies = new();          // Dice roller instance
@@ -123,7 +129,7 @@ namespace DiceAPI.Controllers
         }
 
         /// <summary>
-        /// Parse the nDx[[+|-]n] dice notation string and return Quantity, Sides and
+        /// Parse the nDs[[+|-]n] dice notation string and return Quantity, Sides and
         /// Adjustment by reference to the caller
         /// </summary>
         /// <param name="arg">string: Dice notation to be parsed</param>

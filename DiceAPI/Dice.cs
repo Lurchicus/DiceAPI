@@ -70,25 +70,27 @@ namespace DiceAPI
             {
                 try
                 {
-                    Die ADie = new(DiceId, DiceSides);
-                    DiceCup.Add(ADie);
-                    Dies ADetail = new();
-                    ADetail.Id = ADie.Id;
-                    ADetail.Qty = DiceQuantity;
-                    ADetail.Sides = ADie.Sides;
-                    ADetail.Adjustment = DiceAdjustment;
-                    ADetail.Result = ADie.Result;
-                    ADetail.Total = Results();
-                    Details.Add(ADetail);
+                    Die ADie = new(DiceId, DiceSides);  // Create and toss a die
+                    DiceCup.Add(ADie);                  // Save it in a "dice cup"
+                    Dies ADetail = new();               // Create a "Dice" detail object
+                    ADetail.Id = ADie.Id;               // Die ID
+                    ADetail.Qty = DiceQuantity;         // Quantity (same for all)
+                    ADetail.Sides = ADie.Sides;         // Sides (also the same for all)
+                    ADetail.Adjustment = DiceAdjustment;    // Adjustment (same)
+                    ADetail.Result = ADie.Result;       // Get the roll result for the die
+                    ADetail.Total = Results();          // By putting this here, I get a running adjusted total
+                    Details.Add(ADetail);               // Shove the details into a list (1:1 with Dice Cup)
                 }
                 catch (OutOfMemoryException e)
                 {
                     DiceCup.Clear();
-                    throw new OutOfMemoryException(e.Message, e);
+                    Details.Clear();
+                    throw new OutOfMemoryException("Out of memory exception error: "+e.Message, e);
                 }
                 catch (Exception e)
                 {
                     DiceCup.Clear();
+                    Details.Clear();
                     throw new Exception("Dice exception, creating die.", e);
                 }
             }
